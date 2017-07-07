@@ -21,13 +21,18 @@ from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
 from pyspeedtest import SpeedTest
-from pyspeedtest import pretty_speed
 from os.path import dirname
 
 
 __author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
 
+bitrate_abbreviation_to_spelled_out_name = {
+        "bps" : "bits per second",
+        "Kbps": "kilobits per second",
+        "Mbps": "megabits per second",
+        "Gbps": "gigabits per second"
+    }
 
 def intent_handler(function):
     def new_function(self, message):
@@ -38,8 +43,21 @@ def intent_handler(function):
             self.speak_dialog('error')
     return new_function
 
+def pretty_speed(speed):
+    units = ['bps', 'Kbps', 'Mbps', 'Gbps']
+    unit = 0
+    while speed >= 1000:
+        speed /= 1000
+        unit += 1
+    return '%0.2f %s' % (speed, units[unit])
+
+def convert_bitrate_abbreviation_to_spelled_out_name(speed_str):
+    for abbrevation, spelled_out_name in bitrate_abbreviation_to_spelled_out_name.iteritems():
+        speed_str = speed_str.replace(abbrevation, spelled_out_name)
+    return speed_str
 
 class SpeedTestSkill(MycroftSkill):
+
     def __init__(self):
         super(SpeedTestSkill, self).__init__(name="SpeedTestSkill")
         self.speedtest = None
@@ -61,26 +79,26 @@ class SpeedTestSkill(MycroftSkill):
 
     @intent_handler
     def handle_speedtest_intent(self, message):
-        message = ""
 
         ping = str(round(self.speedtest.ping(), 1))
-        message += ping + " ms"
-        self.enclosure.mouth_text(message)
+        self.enclosure.mouth_text(ping + " ms")
 
         download = pretty_speed(self.speedtest.download())
-        message += " | " + download
-        self.enclosure.mouth_text(message)
+        self.enclosure.mouth_text(download)
 
         upload = pretty_speed(self.speedtest.upload())
-        message += " | " + upload
-        self.enclosure.mouth_text(message)
+        self.enclosure.mouth_text(upload)
 
-        self.speak("Ping was " + ping + " milliseconds, " + "download was " + download + " and upload was " + upload)
+        download = bitrate_abbreviation_to_spelled_out_name(download)
+        upload = bitrate_abbreviation_to_spelled_out_name(upload)
+
+        self.speak("Ping was " + ping + " milliseconds, " +
+                   "the download speed was " + download +
+                   " and the upload speed was " + upload)
         self.enclosure.reset()
 
     def stop(self):
         pass
-
 
 def create_skill():
     return SpeedTestSkill()
