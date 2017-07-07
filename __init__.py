@@ -89,8 +89,8 @@ class SpeedTestSkill(MycroftSkill):
         upload = pretty_speed(self.speedtest.upload())
         self.enclosure.mouth_text(upload)
 
-        download = bitrate_abbreviation_to_spelled_out_name(download)
-        upload = bitrate_abbreviation_to_spelled_out_name(upload)
+        download = convert_bitrate_abbreviation_to_spelled_out_name(download)
+        upload = convert_bitrate_abbreviation_to_spelled_out_name(upload)
 
         self.speak("Ping was " + ping + " milliseconds, " +
                    "the download speed was " + download +
