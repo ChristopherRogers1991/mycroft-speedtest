@@ -1,7 +1,7 @@
 """
-mycroft-irsend : A Mycroft skill for issuing irsend commands
+mycroft-speedtest : A Mycroft skill for running speedtests
 
-Copyright (C) 2016  Christopher Rogers
+Copyright (C) 2017  Christopher Rogers, Sujan Patel
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,12 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
-from os.path import dirname
-from py_irsend import irsend
-from subprocess import CalledProcessError
-from collections import defaultdict
+from pyspeedtest import SpeedTest
+from pyspeedtest import pretty_speed
 
-__author__ = 'ChristopherRogers1991'
+
+__author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
 
 
@@ -33,121 +32,54 @@ def intent_handler(function):
     def new_function(self, message):
         try:
             function(self, message)
-        except CalledProcessError as e:
+        except Exception as e:
             logger.exception(e.message)
             self.speak_dialog('error')
-        except OSError as e:
-            logger.exception(e.message)
-            self.speak_dialog('not.installed')
     return new_function
 
 
-class IrsendSkill(MycroftSkill):
+class SpeedTestSkill(MycroftSkill):
     def __init__(self):
-        super(IrsendSkill, self).__init__(name="IrsendSkill")
-        self.remote_normalized_name_to_real_name_table = dict()
-        self.code_normalized_name_to_real_name_table = dict()
-        self.normalized_remote_to_code_table = defaultdict(list)
-        self.address = self.config.get('address')
-        self.device = self.config.get('device')
+        super(SpeedTestSkill, self).__init__(name="SpeedTestSkill")
+        self.speedtest = None
 
     def initialize(self):
         self.load_data_files(dirname(__file__))
+        host = self.config.get("host")
+        runs = int(self.config.get("runs", 2))
+        http_debug = int(self.config.get("http_debug", 0))
 
-        try:
-            self._register_remotes()
-        except OSError:
-            logger.warning('irsend does not appear to be installed.')
-        except CalledProcessError as e:
-            logger.error('Unable to list remotes. Error was: ' + str(e))
+        self.speedtest = SpeedTest(host=host, runs=runs, http_debug=http_debug)
 
-        send_code_intent = IntentBuilder("IrsendIntent")\
-            .require("SendKeyword")\
-            .require("Remote")\
-            .require("Code")\
-            .optionally("Number")\
+        speedtest_intent = IntentBuilder("SpeedTestSkill")\
+            .require("SpeedTest") \
             .build()
 
-        self.register_intent(send_code_intent,
-                             self.handle_send_code_intent)
-
-        register_remotes_intent = IntentBuilder("RegisterRemotesIntent")\
-            .require('RegisterKeyword')\
-            .build()
-
-        self.register_intent(register_remotes_intent,
-                             self.handle_register_remotes_intent)
-
-        list_remotes_intent = IntentBuilder("ListRemotesIntent")\
-            .require('AvailableKeyword')\
-            .require('RemotesKeyword')\
-            .build()
-
-        self.register_intent(list_remotes_intent,
-                             self.handle_list_remotes_intent)
-
-        list_codes_intent = IntentBuilder("ListCodesIntent")\
-            .require('AvailableKeyword') \
-            .require('CodesKeyword')\
-            .require('Remote')\
-            .build()
-
-        self.register_intent(list_codes_intent,
-                             self.handle_list_codes_for_remote_intent)
-
-
-    def _register_remotes(self):
-        remotes = irsend.list_remotes(self.device, self.address)
-        for remote in remotes:
-            normalized_remote_name = self.normalize_string(remote)
-            codes = irsend.list_codes(remote, self.device, self.address)
-            for code in codes:
-                normalized_code_name = self.normalize_string(code)
-                self.code_normalized_name_to_real_name_table\
-                    [normalized_code_name] = code
-                self.normalized_remote_to_code_table[normalized_remote_name]\
-                    .append(normalized_code_name)
-                self.register_vocabulary(normalized_code_name, 'Code')
-
-            self.remote_normalized_name_to_real_name_table\
-                [normalized_remote_name] = remote
-
-            self.register_vocabulary(normalized_remote_name, 'Remote')
-
-    def normalize_string(self, string):
-        return string.lower().replace('_', ' ')
+        self.register_intent(speedtest_intent,
+                             self.handle_speedtest_intent)
 
     @intent_handler
-    def handle_register_remotes_intent(self, message):
-        self._register_remotes()
+    def handle_speedtest_intent(self, message):
+        message = ""
 
-    @intent_handler
-    def handle_list_remotes_intent(self, message):
-        remotes = ", ".join(self.normalized_remote_to_code_table)
-        data = {'remotes' : remotes}
-        self.speak_dialog('available.remotes', data=data)
+        ping = str(round(self.speedtest.ping(), 1))
+        message += ping + " ms"
+        self.enclosure.mouth_text(message)
 
-    @intent_handler
-    def handle_list_codes_for_remote_intent(self, message):
-        remote_name = message.data.get("Remote")
-        codes = ", ".join(self.normalized_remote_to_code_table[remote_name])
-        data = {'remote' : remote_name, 'codes' : codes}
-        self.speak_dialog('available.codes', data=data)
+        download = pretty_speed(self.speedtest.download())
+        message += " | " + download
+        self.enclosure.mouth_text(message)
 
-    @intent_handler
-    def handle_send_code_intent(self, message):
-        name = message.data.get("Remote")
-        remote = self.remote_normalized_name_to_real_name_table[name]
+        upload = pretty_speed(self.speedtest.upload())
+        message += " | " + upload
+        self.enclosure.mouth_text(message)
 
-        name = message.data.get("Code")
-        code = self.code_normalized_name_to_real_name_table[name]
-
-        count = message.data.get("Number")
-        irsend.send_once(remote, [code], count or 1, self.device, self.address)
+        self.speak("Ping was " + ping + " milliseconds, " + "download was " + download + " and upload was " + upload)
+        self.enclosure.reset()
 
     def stop(self):
         pass
 
 
 def create_skill():
-    return IrsendSkill()
+    return SpeedTestSkill()
