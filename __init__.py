@@ -22,6 +22,7 @@ from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
 from pyspeedtest import SpeedTest
 from pyspeedtest import pretty_speed
+from os.path import dirname
 
 
 __author__ = 'ChristopherRogers1991, Sujan4k0'
@@ -52,7 +53,7 @@ class SpeedTestSkill(MycroftSkill):
         self.speedtest = SpeedTest(host=host, runs=runs, http_debug=http_debug)
 
         speedtest_intent = IntentBuilder("SpeedTestSkill")\
-            .require("SpeedTest") \
+            .require("SpeedTestKeyword") \
             .build()
 
         self.register_intent(speedtest_intent,
