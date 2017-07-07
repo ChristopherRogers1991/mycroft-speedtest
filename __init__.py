@@ -22,17 +22,17 @@ from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
 from pyspeedtest import SpeedTest
 from os.path import dirname
+from collections import OrderedDict
 
 
 __author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
 
-bitrate_abbreviation_to_spelled_out_name = {
-        "bps" : "bits per second",
-        "Kbps": "kilobits per second",
-        "Mbps": "megabits per second",
-        "Gbps": "gigabits per second"
-    }
+bitrate_abbreviation_to_spelled_out_name = OrderedDict()
+bitrate_abbreviation_to_spelled_out_name["Kbps"] = "kilobits per second"
+bitrate_abbreviation_to_spelled_out_name["Mbps"] = "megabits per second"
+bitrate_abbreviation_to_spelled_out_name["Gbps"] = "gigabits per second"
+bitrate_abbreviation_to_spelled_out_name["bps"] = "bits per second"
 
 def intent_handler(function):
     def new_function(self, message):
