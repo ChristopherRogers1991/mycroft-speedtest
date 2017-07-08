@@ -28,6 +28,7 @@ from collections import OrderedDict
 __author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
 
+# Ordered dictionary used to convert unit into 'speakable' text
 bitrate_abbreviation_to_spelled_out_name = OrderedDict()
 bitrate_abbreviation_to_spelled_out_name["Kbps"] = "kilobits per second"
 bitrate_abbreviation_to_spelled_out_name["Mbps"] = "megabits per second"
@@ -43,6 +44,8 @@ def intent_handler(function):
             self.speak_dialog('error')
     return new_function
 
+# Converts the speed to a more reasonable unit; modified from import's function which used 1024
+# instead of 1000
 def pretty_speed(speed):
     units = ['bps', 'Kbps', 'Mbps', 'Gbps']
     unit = 0
@@ -51,6 +54,7 @@ def pretty_speed(speed):
         unit += 1
     return '%0.2f %s' % (speed, units[unit])
 
+# Converts a unit postfix into mycroft 'speakable' text
 def convert_bitrate_abbreviation_to_spelled_out_name(speed_str):
     for abbrevation, spelled_out_name in bitrate_abbreviation_to_spelled_out_name.iteritems():
         speed_str = speed_str.replace(abbrevation, spelled_out_name)
@@ -81,21 +85,12 @@ class SpeedTestSkill(MycroftSkill):
     def handle_speedtest_intent(self, message):
 
         ping = str(round(self.speedtest.ping(), 1))
-        self.enclosure.mouth_text(ping + " ms")
-
-        download = pretty_speed(self.speedtest.download())
-        self.enclosure.mouth_text(download)
-
-        upload = pretty_speed(self.speedtest.upload())
-        self.enclosure.mouth_text(upload)
-
-        download = convert_bitrate_abbreviation_to_spelled_out_name(download)
-        upload = convert_bitrate_abbreviation_to_spelled_out_name(upload)
+        download = convert_bitrate_abbreviation_to_spelled_out_name(pretty_speed(self.speedtest.download()))
+        upload = convert_bitrate_abbreviation_to_spelled_out_name(pretty_speed(self.speedtest.upload()))
 
         self.speak("Ping was " + ping + " milliseconds, " +
                    "the download speed was " + download +
                    " and the upload speed was " + upload)
-        self.enclosure.reset()
 
     def stop(self):
         pass
