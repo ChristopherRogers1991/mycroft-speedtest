@@ -28,15 +28,6 @@ from collections import OrderedDict
 __author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
 
-
-# Ordered dictionary used to convert unit into 'speakable' text
-bitrate_abbreviation_to_spelled_out_name = OrderedDict()
-bitrate_abbreviation_to_spelled_out_name["Kbps"] = "kilobits per second"
-bitrate_abbreviation_to_spelled_out_name["Mbps"] = "megabits per second"
-bitrate_abbreviation_to_spelled_out_name["Gbps"] = "gigabits per second"
-bitrate_abbreviation_to_spelled_out_name["bps"] = "bits per second"
-
-
 def intent_handler(function):
     """
     Decorator to add standard error handling to intent handlers.
@@ -62,7 +53,7 @@ def intent_handler(function):
 def pretty_speed(speed):
     """
     Converts the speed to a more reasonable unit; modified from pyspeedtest's
-    function which used 1024 instead of 1000
+    function which used 1024 instead of 1000 and spells out units instead
 
     Parameters
     ----------
@@ -73,30 +64,13 @@ def pretty_speed(speed):
     str
 
     """
-    units = ['bps', 'Kbps', 'Mbps', 'Gbps']
+    units = ['bits per second', 'kilobits per second', 'megabits per second',
+             'gigabits per second']
     unit = 0
     while speed >= 1000:
         speed /= 1000
         unit += 1
     return '%0.2f %s' % (speed, units[unit])
-
-
-def convert_bitrate_abbreviation_to_spelled_out_name(speed_str):
-    """
-    Parameters
-    ----------
-    speed_str : str
-
-    Returns
-    -------
-    str
-
-    """
-    for abbrevation, spelled_out_name in \
-            bitrate_abbreviation_to_spelled_out_name.iteritems():
-        speed_str = speed_str.replace(abbrevation, spelled_out_name)
-    return speed_str
-
 
 class SpeedTestSkill(MycroftSkill):
 
@@ -139,11 +113,9 @@ class SpeedTestSkill(MycroftSkill):
 
         download = self.attempt_three_times(self.speedtest.download)
         download = pretty_speed(download)
-        download = convert_bitrate_abbreviation_to_spelled_out_name(download)
 
         upload = self.attempt_three_times(self.speedtest.upload)
         upload = pretty_speed(upload)
-        upload = convert_bitrate_abbreviation_to_spelled_out_name(upload)
 
         self.speak("I have your results: Ping was " + ping + " milliseconds, "
                    + "the download speed was " + download +
