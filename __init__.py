@@ -22,11 +22,11 @@ from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
 from pyspeedtest import SpeedTest
 from os.path import dirname
-from collections import OrderedDict
 
 
 __author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
+
 
 def intent_handler(function):
     """
@@ -72,6 +72,39 @@ def pretty_speed(speed):
         unit += 1
     return '%0.2f %s' % (speed, units[unit])
 
+
+def attempt_three_times(function):
+    """
+    Run function up to three times. If it fails after three attempts,
+    raise the final exception it failed with.
+
+    Parameters
+    ----------
+    function : callable
+
+    Returns
+    -------
+    ? : The value returned by function
+
+    Raises
+    ------
+    ? : The final exception function failed with after three attempts.
+
+    """
+    attempts = 0
+    while attempts < 3:
+        try:
+            value = function()
+            return value
+        except Exception as e:
+            attempts += 1
+            if attempts == 3:
+                raise
+            msg = "Caught {error}: {message}. Retrying...".format(
+                error=type(e), message=e.message)
+            logger.warning(msg)
+
+
 class SpeedTestSkill(MycroftSkill):
 
     def __init__(self):
@@ -103,51 +136,23 @@ class SpeedTestSkill(MycroftSkill):
 
         Parameters
         ----------
-        message : Currently unused (required to be taken by mycroft-core).
+        message : Currently unused.
 
         """
         self.speak_dialog('start')
 
-        ping = self.attempt_three_times(self.speedtest.ping)
+        ping = attempt_three_times(self.speedtest.ping)
         ping = str(round(ping, 1))
 
-        download = self.attempt_three_times(self.speedtest.download)
+        download = attempt_three_times(self.speedtest.download)
         download = pretty_speed(download)
 
-        upload = self.attempt_three_times(self.speedtest.upload)
+        upload = attempt_three_times(self.speedtest.upload)
         upload = pretty_speed(upload)
 
         self.speak("I have your results: Ping was " + ping + " milliseconds, "
                    + "the download speed was " + download +
                    ", and the upload speed was " + upload)
-
-    def attempt_three_times(self, function):
-        """
-        Run function up to three times. If it fails after three attempts,
-        raise the final exception it failed with.
-
-        Parameters
-        ----------
-        function : callable
-
-        Returns
-        -------
-        ? : The value returned by function
-
-        Raises
-        ------
-        ? : The final exception function failed with after three attempts.
-
-        """
-        attempts = 0
-        while attempts < 3:
-            try:
-                value = function()
-                return value
-            except Exception:
-                attempts += 1
-                if attempts == 3:
-                    raise
 
     def stop(self):
         """
