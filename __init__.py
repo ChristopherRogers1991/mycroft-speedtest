@@ -37,6 +37,7 @@ bitrate_abbreviation_to_spelled_out_name["bps"] = "bits per second"
 
 def intent_handler(function):
     def new_function(self, message):
+
         try:
             function(self, message)
         except Exception as e:
@@ -44,9 +45,9 @@ def intent_handler(function):
             self.speak_dialog('error')
     return new_function
 
-# Converts the speed to a more reasonable unit; modified from import's function which used 1024
-# instead of 1000
 def pretty_speed(speed):
+    """  Converts the speed to a more reasonable unit; modified from import's
+         function which used 1024 instead of 1000 """
     units = ['bps', 'Kbps', 'Mbps', 'Gbps']
     unit = 0
     while speed >= 1000:
@@ -54,9 +55,10 @@ def pretty_speed(speed):
         unit += 1
     return '%0.2f %s' % (speed, units[unit])
 
-# Converts a unit postfix into mycroft 'speakable' text
 def convert_bitrate_abbreviation_to_spelled_out_name(speed_str):
-    for abbrevation, spelled_out_name in bitrate_abbreviation_to_spelled_out_name.iteritems():
+    """  Converts a unit postfix into mycroft 'speakable' text """
+    for abbrevation, spelled_out_name in \
+            bitrate_abbreviation_to_spelled_out_name.iteritems():
         speed_str = speed_str.replace(abbrevation, spelled_out_name)
     return speed_str
 
@@ -83,14 +85,35 @@ class SpeedTestSkill(MycroftSkill):
 
     @intent_handler
     def handle_speedtest_intent(self, message):
+        self.speak_dialog('start')
 
-        ping = str(round(self.speedtest.ping(), 1))
-        download = convert_bitrate_abbreviation_to_spelled_out_name(pretty_speed(self.speedtest.download()))
-        upload = convert_bitrate_abbreviation_to_spelled_out_name(pretty_speed(self.speedtest.upload()))
+        ping = self.attempt_three_times(self.speedtest.ping)
+        ping = str(round(ping, 1))
 
-        self.speak("Ping was " + ping + " milliseconds, " +
-                   "the download speed was " + download +
-                   " and the upload speed was " + upload)
+        download = self.attempt_three_times(self.speedtest.download)
+        download = pretty_speed(download)
+        download = convert_bitrate_abbreviation_to_spelled_out_name(download)
+
+        upload = self.attempt_three_times(self.speedtest.upload)
+        upload = pretty_speed(upload)
+        upload = convert_bitrate_abbreviation_to_spelled_out_name(upload)
+
+        self.speak("I have your results: Ping was " + ping + " milliseconds, "
+                   + "the download speed was " + download +
+                   ", and the upload speed was " + upload)
+
+    def attempt_three_times(self, function):
+        """ run some function three times, if it fails after three attempts,
+        raise an exception """
+        attempts = 0
+        while attempts < 3:
+            try:
+                value = function()
+                return value
+            except Exception:
+                attempts += 1
+                if attempts == 3:
+                    raise
 
     def stop(self):
         pass
