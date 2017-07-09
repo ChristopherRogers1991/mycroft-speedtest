@@ -28,6 +28,7 @@ from collections import OrderedDict
 __author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
 
+
 # Ordered dictionary used to convert unit into 'speakable' text
 bitrate_abbreviation_to_spelled_out_name = OrderedDict()
 bitrate_abbreviation_to_spelled_out_name["Kbps"] = "kilobits per second"
@@ -35,9 +36,21 @@ bitrate_abbreviation_to_spelled_out_name["Mbps"] = "megabits per second"
 bitrate_abbreviation_to_spelled_out_name["Gbps"] = "gigabits per second"
 bitrate_abbreviation_to_spelled_out_name["bps"] = "bits per second"
 
-def intent_handler(function):
-    def new_function(self, message):
 
+def intent_handler(function):
+    """
+    Decorator to add standard error handling to intent handlers.
+
+    Parameters
+    ----------
+    function : callable
+
+    Returns
+    -------
+    callable
+
+    """
+    def new_function(self, message):
         try:
             function(self, message)
         except Exception as e:
@@ -45,9 +58,21 @@ def intent_handler(function):
             self.speak_dialog('error')
     return new_function
 
+
 def pretty_speed(speed):
-    """  Converts the speed to a more reasonable unit; modified from import's
-         function which used 1024 instead of 1000 """
+    """
+    Converts the speed to a more reasonable unit; modified from pyspeedtest's
+    function which used 1024 instead of 1000
+
+    Parameters
+    ----------
+    speed : float - speed in bytes per second
+
+    Returns
+    -------
+    str
+
+    """
     units = ['bps', 'Kbps', 'Mbps', 'Gbps']
     unit = 0
     while speed >= 1000:
@@ -55,12 +80,23 @@ def pretty_speed(speed):
         unit += 1
     return '%0.2f %s' % (speed, units[unit])
 
+
 def convert_bitrate_abbreviation_to_spelled_out_name(speed_str):
-    """  Converts a unit postfix into mycroft 'speakable' text """
+    """
+    Parameters
+    ----------
+    speed_str : str
+
+    Returns
+    -------
+    str
+
+    """
     for abbrevation, spelled_out_name in \
             bitrate_abbreviation_to_spelled_out_name.iteritems():
         speed_str = speed_str.replace(abbrevation, spelled_out_name)
     return speed_str
+
 
 class SpeedTestSkill(MycroftSkill):
 
@@ -69,6 +105,10 @@ class SpeedTestSkill(MycroftSkill):
         self.speedtest = None
 
     def initialize(self):
+        """
+        Create and register intents
+
+        """
         self.load_data_files(dirname(__file__))
         host = self.config.get("host")
         runs = int(self.config.get("runs", 2))
@@ -77,14 +117,21 @@ class SpeedTestSkill(MycroftSkill):
         self.speedtest = SpeedTest(host=host, runs=runs, http_debug=http_debug)
 
         speedtest_intent = IntentBuilder("SpeedTestSkill")\
-            .require("SpeedTestKeyword") \
+            .require("SpeedTestKeyword")\
             .build()
 
-        self.register_intent(speedtest_intent,
-                             self.handle_speedtest_intent)
+        self.register_intent(speedtest_intent, self.handle_speedtest_intent)
 
     @intent_handler
     def handle_speedtest_intent(self, message):
+        """
+        Run a speedtest, and speak the results.
+
+        Parameters
+        ----------
+        message : Currently unused (required to be taken by mycroft-core).
+
+        """
         self.speak_dialog('start')
 
         ping = self.attempt_three_times(self.speedtest.ping)
@@ -103,8 +150,23 @@ class SpeedTestSkill(MycroftSkill):
                    ", and the upload speed was " + upload)
 
     def attempt_three_times(self, function):
-        """ run some function three times, if it fails after three attempts,
-        raise an exception """
+        """
+        Run function up to three times. If it fails after three attempts,
+        raise the final exception it failed with.
+
+        Parameters
+        ----------
+        function : callable
+
+        Returns
+        -------
+        ? : The value returned by function
+
+        Raises
+        ------
+        ? : The final exception function failed with after three attempts.
+
+        """
         attempts = 0
         while attempts < 3:
             try:
@@ -116,7 +178,20 @@ class SpeedTestSkill(MycroftSkill):
                     raise
 
     def stop(self):
+        """
+        Not implemented
+
+        """
         pass
 
+
 def create_skill():
+    """
+    Wraps the SpeedTestSkill constructor.
+
+    Returns
+    -------
+    SpeedTestSkill
+
+    """
     return SpeedTestSkill()
