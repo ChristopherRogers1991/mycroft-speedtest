@@ -1,4 +1,4 @@
-# mycroft-irsend
+# mycroft-speedtest
 A Mycroft skill for running speedtests
 
 ## Short Demo
