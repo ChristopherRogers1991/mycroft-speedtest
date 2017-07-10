@@ -2,7 +2,7 @@
 A Mycroft skill for running speedtests
 
 ## Short Demo
-<to be done>
+https://www.youtube.com/watch?v=1Tm56JKZcAg
 
 ## Setup
 
