@@ -145,7 +145,8 @@ class SpeedTestSkill(MycroftSkill):
 
         """
         self.speak_dialog('start')
-
+        self.enclosure.mouth_think()
+        self.enclosure.eyes_timed_spin()
         ping = attempt_three_times(self.speedtest.ping)
         ping = str(round(ping, 1))
 
@@ -158,6 +159,7 @@ class SpeedTestSkill(MycroftSkill):
         self.speak("I have your results: Ping was " + ping + " milliseconds, "
                    + "the download speed was " + download +
                    ", and the upload speed was " + upload)
+        self.enclosure.reset()
 
     def stop(self):
         """
