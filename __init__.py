@@ -149,7 +149,7 @@ class SpeedTestSkill(MycroftSkill):
         self.enclosure.mouth_think()
         # Display info on a screen
         self.enclosure.deactivate_mouth_events()
-        self.enclosure.eyes_timed_spin(0)
+        self.enclosure.eyes_timed_spin(None)
         ping = attempt_three_times(self.speedtest.ping)
         ping = str(round(ping, 1))
 
