@@ -22,7 +22,7 @@ from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
 from pyspeedtest import SpeedTest
 from os.path import dirname
-
+from mycroft.audio import wait_while_speaking
 
 __author__ = 'ChristopherRogers1991, Sujan4k0'
 logger = getLogger(__name__)
@@ -145,7 +145,10 @@ class SpeedTestSkill(MycroftSkill):
 
         """
         self.speak_dialog('start')
+        wait_while_speaking()
         self.enclosure.mouth_think()
+        # Display info on a screen
+        self.enclosure.deactivate_mouth_events()
         self.enclosure.eyes_timed_spin(0)
         ping = attempt_three_times(self.speedtest.ping)
         ping = str(round(ping, 1))
@@ -159,7 +162,8 @@ class SpeedTestSkill(MycroftSkill):
         self.speak("I have your results: Ping was " + ping + " milliseconds, "
                    + "the download speed was " + download +
                    ", and the upload speed was " + upload)
-        self.enclosure.reset()
+        self.enclosure.activate_mouth_events()
+        self.enclosure.mouth_reset()
 
     def stop(self):
         """
