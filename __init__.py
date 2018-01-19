@@ -110,16 +110,21 @@ class SpeedTestSkill(MycroftSkill):
     def __init__(self):
         super(SpeedTestSkill, self).__init__(name="SpeedTestSkill")
         self.speedtest = None
+        if "host" not in self.settings:
+            self.settings["host"] = None
+        if "runs" not in self.settings:
+            self.settings["runs"] = 2
+        if "http_debug" not in self.settings:
+            self.settings["http_debug"] = 0
 
     def initialize(self):
         """
         Create and register intents
 
         """
-        self.load_data_files(dirname(__file__))
-        host = self.config.get("host")
-        runs = int(self.config.get("runs", 2))
-        http_debug = int(self.config.get("http_debug", 0))
+        host = self.settings["host"]
+        runs = int(self.settings["runs"])
+        http_debug = int(self.settings["http_debug"])
 
         self.speedtest = SpeedTest(host=host, runs=runs, http_debug=http_debug)
 

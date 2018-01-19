@@ -1,0 +1,34 @@
+
+{
+    "name": "Speedtest Skill",
+    "skillMetadata": {
+        "sections": [
+            {
+                "name": "Options",
+                "fields": [
+                    {
+                        "name": "host",
+                        "type": "text",
+                        "label": "host",
+                        "placeholder": "",
+                        "value": ""
+                    },
+                    {
+                        "name": "runs",
+                        "type": "number",
+                        "label": "runs",
+                        "placeholder": "",
+                        "value": "2"
+                    },
+                    {
+                        "name": "http_debug",
+                        "type": "number",
+                        "label": "http_debug",
+                        "placeholder": "",
+                        "value": "0"
+                    }
+                ]
+            }
+        ]
+    }
+}

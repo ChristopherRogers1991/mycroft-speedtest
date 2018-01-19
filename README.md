@@ -14,17 +14,8 @@ https://www.youtube.com/watch?v=1Tm56JKZcAg
   * `source ~/.virtualenvs/mycroft/bin/activate`
 4. Install the required python libraries
   * `pip install -r requirements.txt`
-5. Add the block below to your mycroft.conf file (`~/.mycroft/mycroft.conf`)
-```
-   "SpeedTestSkill": {
-        "host": "",
-        "http_debug": 0,
-        "runs": <runs, recommend 10>
-    }
+5. Change skill options in the mycroft.home if desired
 
-```
-
-If that file did not already exist (this is the first third party skill you have added), wrap that entire block in { }. The finished file should be valid json. If you have issues, use http://jsonlint.com/ to validate the json.
 
 ## Sample Phrases
 1. Run a speedtest
