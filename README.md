@@ -14,8 +14,8 @@ https://www.youtube.com/watch?v=1Tm56JKZcAg
   * `source ~/.virtualenvs/mycroft/bin/activate`
 4. Install the required python libraries
   * `pip install -r requirements.txt`
-5. Change skill options in the mycroft.home if desired
-
+5. Change skill options in the mycroft.home if desired (requires reboot)
+  * https://www.speedtest.net/speedtest-servers.php
 
 ## Sample Phrases
 1. Run a speedtest
