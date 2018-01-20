@@ -1,0 +1,7 @@
+
+{
+    "host": "speedtest-po.vodafone.pt:8080",
+    "runs": "2",
+    "http_debug": "0"
+
+}
