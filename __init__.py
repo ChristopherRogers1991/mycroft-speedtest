@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
 from mycroft.audio import wait_while_speaking
+from mycroft.util.log import LOG
 
 from pyspeedtest import SpeedTest
 import time
@@ -48,7 +49,7 @@ def intent_handler(function):
         try:
             function(self, message)
         except Exception as e:
-            logger.exception(e.message)
+            self.log.exception(e.message)
             self.speak_dialog('error')
     return new_function
 
@@ -105,9 +106,10 @@ def attempt_three_times(function):
                 raise
             msg = "Caught {error}: {message}. Retrying...".format(
                 error=type(e), message=e.message)
-            logger.warning(msg)
+            LOG.warning(msg)
 
 
+#######################################################################
 # Helpers for building the animation frames
 
 def animate(t, often, func, *args):
