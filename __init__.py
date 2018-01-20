@@ -19,14 +19,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from adapt.intent import IntentBuilder
 from mycroft.skills.core import MycroftSkill
-from mycroft.util.log import getLogger
-from pyspeedtest import SpeedTest
-from os.path import dirname
 from mycroft.audio import wait_while_speaking
 
-__author__ = 'ChristopherRogers1991, Sujan4k0'
-logger = getLogger(__name__)
+from pyspeedtest import SpeedTest
+import time
+from threading import Thread
 
+
+__author__ = 'ChristopherRogers1991, Sujan4k0, Jarbas'
+
+
+# speed test helpers
 
 def intent_handler(function):
     """
@@ -105,6 +108,30 @@ def attempt_three_times(function):
             logger.warning(msg)
 
 
+# Helpers for building the animation frames
+
+def animate(t, often, func, *args):
+    '''
+    Args:
+        t (int) : seconds from now to begin the frame (secs)
+        often (int/string): (int) how often to repeat the frame (secs)
+                            (str) when to trigger, relative to the clock,
+                                  for synchronized repetitions
+        func: the function to invoke
+        *args: arguments to pass to func
+    '''
+    return {
+        "time": time.time() + t,
+        "often": often,
+        "func": func,
+        "args": args
+    }
+
+
+def _get_time(often, t):
+    return often - t % often
+
+
 class SpeedTestSkill(MycroftSkill):
 
     def __init__(self):
@@ -116,6 +143,36 @@ class SpeedTestSkill(MycroftSkill):
             self.settings["runs"] = 2
         if "http_debug" not in self.settings:
             self.settings["http_debug"] = 0
+        self.animations = []
+        self.playing = False
+        self.thread = None
+
+    def run(self):
+        """
+        animation thread while performing speedtest
+
+        """
+
+        while self.playing:
+            for animation in self.animations:
+                if animation["time"] <= time.time():
+                    # Execute animation action
+                    animation["func"](*animation["args"])
+
+                    # Adjust time for next loop
+                    if type(animation["often"]) is int:
+                        animation["time"] = time.time() + animation["often"]
+                    else:
+                        often = int(animation["often"])
+                        t = animation["time"]
+                        animation["time"] = time.time() + _get_time(
+                            often, t)
+            time.sleep(0.1)
+
+        self.thread = None
+        self.enclosure.activate_mouth_events()
+        self.enclosure.mouth_reset()
+        self.enclosure.eyes_reset()
 
     def initialize(self):
         """
@@ -146,10 +203,26 @@ class SpeedTestSkill(MycroftSkill):
         """
         self.speak_dialog('start')
         wait_while_speaking()
-        self.enclosure.mouth_think()
-        # Display info on a screen
-        self.enclosure.deactivate_mouth_events()
-        self.enclosure.eyes_timed_spin(None)
+
+        if not self.thread:
+            self.playing = True
+
+            # Display info on a screen
+            self.enclosure.deactivate_mouth_events()
+            self.enclosure.mouth_think()
+
+            # Build the list of animation actions to run
+            self.animations = [
+                # look up down every 2 seconds, looping at 8 seconds
+                animate(4, 8, self.enclosure.eyes_look, "d"),
+                animate(6, 8, self.enclosure.eyes_look, "u"),
+
+            ]
+
+            self.thread = Thread(None, self.run)
+            self.thread.daemon = True
+            self.thread.start()
+
         ping = attempt_three_times(self.speedtest.ping)
         ping = str(round(ping, 1))
 
@@ -159,18 +232,17 @@ class SpeedTestSkill(MycroftSkill):
         upload = attempt_three_times(self.speedtest.upload)
         upload = pretty_speed(upload)
 
+        self.playing = False
         self.speak("I have your results: Ping was " + ping + " milliseconds, "
                    + "the download speed was " + download +
                    ", and the upload speed was " + upload)
-        self.enclosure.activate_mouth_events()
-        self.enclosure.mouth_reset()
 
     def stop(self):
-        """
-        Not implemented
-
-        """
-        pass
+        if self.playing:
+            self.playing = False  # the thread will kill itself
+            return True
+        else:
+            return False
 
 
 def create_skill():
