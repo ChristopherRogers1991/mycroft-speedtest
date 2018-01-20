@@ -10,21 +10,21 @@
                         "name": "host",
                         "type": "text",
                         "label": "host",
-                        "placeholder": "",
-                        "value": ""
+                        "placeholder": "speedtest-po.vodafone.pt:8080",
+                        "value": "speedtest-po.vodafone.pt:8080"
                     },
                     {
                         "name": "runs",
                         "type": "number",
                         "label": "runs",
-                        "placeholder": "",
+                        "placeholder": "2",
                         "value": "2"
                     },
                     {
                         "name": "http_debug",
                         "type": "number",
                         "label": "http_debug",
-                        "placeholder": "",
+                        "placeholder": "0",
                         "value": "0"
                     }
                 ]
